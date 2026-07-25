@@ -1,55 +1,55 @@
-# Realtime Translator — субтитры созвона EN→RU в реальном времени
+# Realtime Translator — realtime EN→RU call subtitles
 
-Слушает **системный звук** (голоса собеседников в Discord, Slack, браузере — любом
-приложении), распознаёт английскую речь на GPU через faster-whisper и показывает
-**перевод на русский** в окне поверх всех окон. Задержка ~1–2 сек на NVIDIA GPU.
+Listens to **system audio** (the other party's voice in Discord, Slack, a browser — any
+app), transcribes English speech on the GPU via faster-whisper, and shows a **Russian
+translation** in an always-on-top overlay window. ~1-2s latency on an NVIDIA GPU.
 
 ```
-Звук созвона ─► WASAPI loopback ─► faster-whisper (EN) ─► DeepL (RU) ─► окно субтитров
+Call audio ─► WASAPI loopback ─► faster-whisper (EN) ─► DeepL (RU) ─► subtitle window
 ```
 
-## Установка (Windows 11)
+## Setup (Windows 11)
 
-1. **Python 3.10–3.12** (не 3.13 — колёса faster-whisper/PyQt стабильнее на 3.11/3.12).
+1. **Python 3.10-3.12** (not 3.13 — faster-whisper/PyQt wheels are more stable on 3.11/3.12).
 
-2. Виртуальное окружение и зависимости:
+2. Virtual environment and dependencies:
    ```powershell
-   cd projects\realtime_translator
+   cd realtime_translator
    python -m venv .venv
    .\.venv\Scripts\Activate.ps1
    pip install -r requirements.txt
    ```
 
-3. **CUDA-библиотеки для GPU.** faster-whisper на GPU требует cuDNN/cuBLAS.
-   Проще всего поставить их через pip:
+3. **CUDA libraries for GPU.** faster-whisper on GPU needs cuDNN/cuBLAS.
+   Easiest way is via pip:
    ```powershell
    pip install nvidia-cudnn-cu12 nvidia-cublas-cu12
    ```
-   Если GPU не заведётся — в `.env` поставь `DEVICE=cpu` и `COMPUTE_TYPE=int8`
-   (медленнее, но работает везде).
+   If the GPU doesn't work — set `DEVICE=cpu` and `COMPUTE_TYPE=int8` in `.env`
+   (slower, but works everywhere).
 
-4. **Ключ DeepL** (бесплатно, план *DeepL API Free*, 500k символов/мес):
-   https://www.deepl.com/pro-api → скопируй `.env.example` в `.env` и впиши ключ:
+4. **DeepL key** (free, *DeepL API Free* plan, 500k characters/month):
+   https://www.deepl.com/pro-api → copy `.env.example` to `.env` and add the key:
    ```powershell
    copy .env.example .env
-   # открой .env и вставь DEEPL_API_KEY=...
+   # open .env and set DEEPL_API_KEY=...
    ```
 
-## Запуск
+## Running it
 
-- **Обычно:** двойной клик по ярлыку **«Realtime Translator»** на рабочем столе.
-  Никакого окна консоли не появляется (запуск через `launch.vbs` → `pythonw.exe`
-  в полностью скрытом режиме). Повторные клики безопасны — если приложение уже
-  запущено, повторный клик ничего не делает (не плодит вторые окна).
-- **Из терминала (с логами, для отладки):** `.\.venv\Scripts\python.exe main.py`
+- **Normally:** double-click the **"Realtime Translator"** shortcut on the desktop.
+  No console window appears (it launches via `launch.vbs` → `pythonw.exe` fully
+  hidden). Repeated clicks are safe — if the app is already running, clicking again
+  does nothing (no duplicate windows).
+- **From a terminal (with logs, for debugging):** `.\.venv\Scripts\python.exe main.py`
 
-Первый запуск скачает модель Whisper (`large-v3` ~3 ГБ). Дальше — из кэша.
-В окне жми **▶ Start**, дождись зелёной точки — и начинай созвон. (Интерфейс приложения — на английском, эти пояснения в README — на русском для тебя.)
+First run downloads the Whisper model (`large-v3`, ~3GB). After that it's cached.
+Click **▶ Start** in the window, wait for the green dot, and start your call.
 
-- Перетащить окно — за верхнюю полосу мышью. Размер — за уголок или кнопкой ▢.
-- Свернуть / развернуть / закрыть — кнопки справа вверху.
+- Drag the window by its top bar. Resize from the corner or the ▢ button.
+- Minimize / maximize / close — buttons in the top-right corner.
 
-### Пересоздать ярлык на рабочем столе
+### Recreating the desktop shortcut
 ```powershell
 $proj = "$PWD"
 $ws = New-Object -ComObject WScript.Shell
@@ -58,39 +58,40 @@ $sc.TargetPath = "wscript.exe"; $sc.Arguments = "`"$proj\launch.vbs`""
 $sc.WorkingDirectory = $proj; $sc.IconLocation = "$proj\.venv\Scripts\pythonw.exe,0"; $sc.Save()
 ```
 
-## Настройка (файл `.env`)
+## Configuration (`.env` file)
 
-| Параметр | Зачем |
+| Parameter | What it does |
 |---|---|
-| `MODEL_SIZE` | `large-v3` (точность) · `medium`/`small` (быстрее, меньше VRAM) |
-| `SILENCE_RMS` | Порог тишины. Ловит лишний шум — подними до `0.012–0.02` |
-| `SHOW_ORIGINAL` | `0` — прятать английский оригинал, оставить только русский |
-| `FONT_SIZE_RU` | Размер шрифта перевода |
+| `MODEL_SIZE` | `large-v3` (accuracy) · `medium`/`small` (faster, less VRAM) |
+| `SILENCE_RMS` | Silence threshold. Picking up noise? Raise to `0.012-0.02` |
+| `SHOW_ORIGINAL` | `0` — hide the English original, keep only the Russian |
+| `FONT_SIZE_RU` | Translation font size |
 
-## Тонкости
+## Notes
 
-- **Слышно только собеседников, не тебя** — снимается звук с динамиков (loopback),
-  твой микрофон в него не попадает. Это и нужно.
-- **Наушники.** Работает и с наушниками: loopback берёт поток до устройства вывода.
-- Если ничего не появляется — проверь, что в Windows выбран правильный
-  **динамик по умолчанию** (тот, в который идёт звук созвона).
+- **You only hear the other party, not yourself** — audio is captured from the output
+  device (loopback), your microphone never feeds into it. That's intentional.
+- **Headphones.** Works fine with headphones too: loopback taps the stream before the
+  output device.
+- If nothing shows up — check that Windows has the right **default playback device**
+  selected (the one the call's audio is routed to).
 
-## Лог созвона (сохраняется автоматически)
+## Call log (saved automatically)
 
-Каждый звонок (от «Start» до «Stop») пишется в свой файл в папке `logs/` —
-имя файла = дата-время начала (`2026-07-02_18-14-44.txt`). Ничего не удаляется
-автоматически: старые звонки просто копятся, чисти вручную когда захочешь —
-кнопка **«Папка логов»** внизу окна открывает её в проводнике.
+Every call (from "Start" to "Stop") is written to its own file in `logs/` — filename =
+start date-time (`2026-07-02_18-14-44.txt`). Nothing is deleted automatically; old calls
+just accumulate, clean up manually whenever you like — the **"Logs folder"** button at
+the bottom of the window opens it in Explorer.
 
-Формат файла — с таймстампами, EN и RU для каждой реплики:
+File format — timestamped, EN and RU for each line:
 ```
 [18:14:44] EN: Hello, how are you?
 [18:14:44] RU: Привет, как дела?
 ```
 
-## Обратное направление (ты → английский) — этап 2
+## Reverse direction (you → English) — stage 2
 
-Понимание их речи закрыто. Чтобы *тебя* понимали по-английски, нужен отдельный
-модуль: ты говоришь по-русски → STT → перевод RU→EN → TTS → голос уходит в
-**виртуальный микрофон** (VB-CABLE), который выбран источником в Discord.
-Это следующий шаг — скажи, и добавлю.
+Understanding their speech is done. To make *you* understood in English, a separate
+module is needed: you speak Russian → STT → RU→EN translation → TTS → the voice goes
+into a **virtual microphone** (VB-CABLE) selected as the input source in Discord.
+That's the next step.
