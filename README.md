@@ -1,5 +1,7 @@
 # Realtime Translator — realtime EN→RU call subtitles
 
+<img src="preview.jpg" width="500" alt="Realtime Translator overlay screenshot">
+
 Listens to **system audio** (the other party's voice in Discord, Slack, a browser — any
 app), transcribes English speech on the GPU via faster-whisper, and shows a **Russian
 translation** in an always-on-top overlay window. ~1-2s latency on an NVIDIA GPU.
