@@ -1,0 +1,12 @@
+.env
+.venv/
+__pycache__/
+*.pyc
+build/
+dist/
+installer_out/
+logs/
+run_pid.txt
+*.spec.bak
+Thumbs.db
+.DS_Store
